@@ -3,7 +3,7 @@
 Solana program made in Rust using the Anchor framework, for the 2024 Superteam Talent Olympics
 
 ## Program Architecture
-<img width="2167" alt="architecture" src="https://github.com/user-attachments/assets/2817b2c5-e6f2-4a4f-ba28-09c5d15096f6">
+<img width="2167" alt="architecture" src="https://github.com/user-attachments/assets/06189cfd-819a-4d3f-a132-dc7f4b179c4a">
 
 This program allows to sell SPL tokens to whitelisted users, at a fixed price, with a purchase limit.
 
