@@ -7,8 +7,6 @@ use std::cmp::min;
 
 declare_id!("4p4prbrjN1moKY3W2918t6VJYuAphGikE47ZpBVZYdcf");
 
-// const ADMIN_PUBKEY: Pubkey = pubkey!("Fap2ubTXiWds3nftAeZKSRr9PZjkK4EVnBkacCMZqTyi");
-
 #[program]
 pub mod tokensale {
 
@@ -129,6 +127,23 @@ pub mod tokensale {
         anchor_spl::token::transfer(cpi_ctx, amount)?;
         Ok(())
     }
+
+    pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
+        let cpi_accounts = anchor_lang::system_program::Transfer {
+            from: ctx
+                .accounts
+                .token_account_owner_pda
+                .to_account_info()
+                .clone(),
+            to: ctx.accounts.signer.to_account_info().clone(),
+        };
+
+        let cpi_program = ctx.accounts.system_program.clone();
+        let cpi_ctx = CpiContext::new(cpi_program.to_account_info(), cpi_accounts);
+        let _ = anchor_lang::system_program::transfer(cpi_ctx, amount);
+
+        Ok(())
+    }
 }
 
 #[derive(Accounts)]
@@ -178,6 +193,21 @@ pub struct Deposit<'info> {
 
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
+}
+
+#[derive(Accounts)]
+pub struct Withdraw<'info> {
+    #[account(mut, address = config_account.admin_pubkey)]
+    pub signer: Signer<'info>,
+
+    #[account(seeds = [b"CONFIG_ACCOUNT"], bump)]
+    pub config_account: Account<'info, ConfigurationAccount>,
+
+    /// CHECK:
+    #[account(seeds=[b"token_account_owner_pda"],bump )]
+    pub token_account_owner_pda: UncheckedAccount<'info>,
+
+    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
