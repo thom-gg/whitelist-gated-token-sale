@@ -1,7 +1,7 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { Tokensale } from "../target/types/tokensale";
-import { Connection, Keypair, PublicKey, SystemProgram } from "@solana/web3.js";
+import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram } from "@solana/web3.js";
 import { AccountLayout, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, createMint, getAccount, getMint, getOrCreateAssociatedTokenAccount, mintTo, getAssociatedTokenAddress } from '@solana/spl-token';
 import BN from 'bn.js'
 import { assert } from "chai";
@@ -18,7 +18,7 @@ describe("tokensale", () => {
   const adminKeypair = provider.wallet as anchor.Wallet;
   const rdmUser = Keypair.generate();
 
-  let token_price = 0.0005;
+  let token_price = 0.05;
   let purchase_limit = 400;
   let decimals = 9;
 
@@ -207,6 +207,25 @@ describe("tokensale", () => {
       user_ata
     );
     assert(Number(userAtaInfo.amount) == (3 * Math.pow(10, 9)));
+
+  });
+
+  it("Admin withdraw SOL", async () => {
+    let balance_on_program = await connection.getBalance(tokenAccountOwnerPda);
+    let amount_to_withdraw = Math.floor((parseFloat((balance_on_program / LAMPORTS_PER_SOL).toFixed(4)) * LAMPORTS_PER_SOL) / 2);
+
+    let tx_id = await program.methods
+      .withdraw(new BN(amount_to_withdraw))
+      .accounts({
+        signer: adminKeypair.publicKey,
+        configAccount: configPublicKey,
+        tokenAccountOwnerPda: tokenAccountOwnerPda,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc();
+
+    await connection.confirmTransaction(tx_id);
+
 
   });
 });
