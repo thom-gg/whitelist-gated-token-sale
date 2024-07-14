@@ -129,18 +129,16 @@ pub mod tokensale {
     }
 
     pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
-        let cpi_accounts = anchor_lang::system_program::Transfer {
-            from: ctx
-                .accounts
-                .token_account_owner_pda
-                .to_account_info()
-                .clone(),
-            to: ctx.accounts.signer.to_account_info().clone(),
-        };
-
-        let cpi_program = ctx.accounts.system_program.clone();
-        let cpi_ctx = CpiContext::new(cpi_program.to_account_info(), cpi_accounts);
-        let _ = anchor_lang::system_program::transfer(cpi_ctx, amount);
+        **ctx
+            .accounts
+            .signer
+            .to_account_info()
+            .try_borrow_mut_lamports()? += amount;
+        **ctx
+            .accounts
+            .token_account_owner_pda
+            .to_account_info()
+            .try_borrow_mut_lamports()? -= amount;
 
         Ok(())
     }
@@ -204,7 +202,7 @@ pub struct Withdraw<'info> {
     pub config_account: Account<'info, ConfigurationAccount>,
 
     /// CHECK:
-    #[account(seeds=[b"token_account_owner_pda"],bump )]
+    #[account(mut, seeds=[b"token_account_owner_pda"],bump )]
     pub token_account_owner_pda: UncheckedAccount<'info>,
 
     pub system_program: Program<'info, System>,
